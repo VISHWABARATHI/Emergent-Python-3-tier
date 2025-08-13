@@ -105,54 +105,76 @@ const AuthProvider = ({ children }) => {
 const Header = ({ cartItemsCount, onCartClick }) => {
   const { user, logout, isAuthenticated } = useAuth();
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="text-2xl font-bold text-gray-900 hover:text-gray-700 transition-colors">
-          ShopHub
-        </Link>
-        
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onCartClick}
-            className="relative"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            {cartItemsCount > 0 && (
-              <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs">
-                {cartItemsCount}
-              </Badge>
-            )}
-          </Button>
+    <>
+      <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <Link to="/" className="text-2xl font-bold text-gray-900 hover:text-gray-700 transition-colors">
+            ShopHub
+          </Link>
           
-          {isAuthenticated ? (
-            <div className="flex items-center space-x-2">
-              <Avatar>
-                <AvatarFallback>{user?.full_name?.charAt(0) || 'U'}</AvatarFallback>
-              </Avatar>
-              <Button variant="ghost" size="sm" onClick={logout}>
-                <LogOut className="h-4 w-4" />
+          <div className="flex items-center space-x-4">
+            {isAuthenticated && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAdminPanel(true)}
+                className="hidden md:flex"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Admin
               </Button>
-            </div>
-          ) : (
-            <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <User className="h-4 w-4 mr-2" />
-                  Sign In
+            )}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCartClick}
+              className="relative"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              {cartItemsCount > 0 && (
+                <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs">
+                  {cartItemsCount}
+                </Badge>
+              )}
+            </Button>
+            
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <Avatar>
+                  <AvatarFallback>{user?.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                </Avatar>
+                <Button variant="ghost" size="sm" onClick={logout}>
+                  <LogOut className="h-4 w-4" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <AuthDialog onClose={() => setShowAuthDialog(false)} />
-              </DialogContent>
-            </Dialog>
-          )}
+              </div>
+            ) : (
+              <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <User className="h-4 w-4 mr-2" />
+                    Sign In
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <AuthDialog onClose={() => setShowAuthDialog(false)} />
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Admin Panel Dialog */}
+      <Dialog open={showAdminPanel} onOpenChange={setShowAdminPanel}>
+        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <AdminPanel onClose={() => setShowAdminPanel(false)} />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
