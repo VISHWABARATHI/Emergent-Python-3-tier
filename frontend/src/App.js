@@ -178,7 +178,203 @@ const Header = ({ cartItemsCount, onCartClick }) => {
   );
 };
 
-// Auth Dialog Component
+// Admin Panel Component
+const AdminPanel = ({ onClose }) => {
+  const [products, setProducts] = useState([]);
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    description: '',
+    price: '',
+    image_url: '',
+    category: '',
+    stock: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('products');
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(`${API}/products`);
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  const createProduct = async () => {
+    setLoading(true);
+    try {
+      await axios.post(`${API}/products`, {
+        ...newProduct,
+        price: parseFloat(newProduct.price),
+        stock: parseInt(newProduct.stock)
+      });
+      
+      setNewProduct({ name: '', description: '', price: '', image_url: '', category: '', stock: '' });
+      fetchProducts();
+    } catch (error) {
+      console.error('Error creating product:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteProduct = async (productId) => {
+    try {
+      await axios.delete(`${API}/products/${productId}`);
+      fetchProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+  };
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle className="flex items-center">
+          <Settings className="h-5 w-5 mr-2" />
+          Admin Panel
+        </DialogTitle>
+        <DialogDescription>
+          Manage your store products and inventory
+        </DialogDescription>
+      </DialogHeader>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="add-product">Add Product</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="products" className="mt-4 overflow-auto max-h-[50vh]">
+          <div className="space-y-4">
+            {products.map((product) => (
+              <div key={product.id} className="flex items-center space-x-4 p-4 border rounded-lg">
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  className="w-16 h-16 object-cover rounded"
+                />
+                <div className="flex-1">
+                  <h4 className="font-medium">{product.name}</h4>
+                  <p className="text-sm text-gray-600">{product.category} • ${product.price} • {product.stock} in stock</p>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteProduct(product.id)}>
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="add-product" className="mt-4">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Product Name</Label>
+                <Input
+                  id="name"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                  placeholder="Enter product name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select value={newProduct.category} onValueChange={(value) => setNewProduct({...newProduct, category: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Electronics">Electronics</SelectItem>
+                    <SelectItem value="Fashion">Fashion</SelectItem>
+                    <SelectItem value="Beauty">Beauty</SelectItem>
+                    <SelectItem value="Home">Home</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={newProduct.description}
+                onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                placeholder="Enter product description"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="price">Price ($)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  value={newProduct.price}
+                  onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <Label htmlFor="stock">Stock</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  value={newProduct.stock}
+                  onChange={(e) => setNewProduct({...newProduct, stock: e.target.value})}
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <Label htmlFor="image">Image URL</Label>
+                <Input
+                  id="image"
+                  value={newProduct.image_url}
+                  onChange={(e) => setNewProduct({...newProduct, image_url: e.target.value})}
+                  placeholder="https://..."
+                />
+              </div>
+            </div>
+
+            <Button onClick={createProduct} disabled={loading} className="w-full">
+              {loading ? 'Creating...' : 'Create Product'}
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          Close
+        </Button>
+      </DialogFooter>
+    </>
+  );
+};
 const AuthDialog = ({ onClose }) => {
   const { login, register } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
